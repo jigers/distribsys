@@ -1,3 +1,7 @@
+from SimpleXMLRPCServer import SimpleXMLRPCServer
+import sys
+
+
 class View:
     def __init__(self, master, backup, number):
         self.master = master
@@ -92,13 +96,19 @@ class Coordinator:
                 self.new_view.master = self.cur_view.master
                 self.new_view.backup = self.__find_server([self.new_view.master])
                 self.new_view.number = self.cur_view.number + 1
-                if (self.confirmed):
+                if self.confirmed:
                     self.__updateView()
                     self.confirmed = False
         return self.__view_for_ans()
 
     def master(self):
-        return self.cur_view.master
+        return self.cur_view.master[0]
+
+    def backup(self):
+        if self.cur_view.backup is not None:
+            return self.cur_view.backup[0]
+        else:
+            return None
 
     def tick(self):
         for i in range(len(self.servers)):
@@ -120,3 +130,18 @@ class Coordinator:
                 self.confirmed = False
         self.servers = [a for a in self.servers if a[1] > 0]
         return
+
+
+def run_coord(address, host):
+    server = SimpleXMLRPCServer((address, int(host)), allow_none=True)
+    server.register_instance(Coordinator())
+    print 'Coordinator started at http://' + address + ':' + host
+    server.serve_forever()
+
+
+def main():
+    run_coord(sys.argv[1], sys.argv[2])
+
+
+if __name__ == "__main__":
+    main()
